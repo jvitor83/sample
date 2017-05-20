@@ -1,0 +1,17 @@
+{
+    "name": "Musis",
+    "short_name": "Musis",
+    "description": "Music searcher!",
+    "icons": [
+        {
+            "src": "./icons/android-chrome-256x256.png",
+            "sizes": "256x256",
+            "type": "image/png"
+        }
+    ],
+    "start_url": "./",
+    "display": "standalone",
+    "orientation": "any",
+    "theme_color": "#3E4EB8",
+    "background_color": "#3E4EB8"
+}

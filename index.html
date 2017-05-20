@@ -1,0 +1,172 @@
+<!doctype html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+
+    <link rel="manifest" href="manifest.json">
+    <script src="./vendors/pwacompat/pwacompat.min.js"></script>
+
+
+    <link rel="apple-touch-icon" sizes="180x180" href="./icons/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="./icons/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="./icons/favicon-16x16.png">
+    <link rel="manifest" href="./icons/manifest.json">
+    <link rel="mask-icon" href="./icons/safari-pinned-tab.svg" color="#5bbad5">
+    <link rel="shortcut icon" href="./icons/favicon.ico">
+    <meta name="apple-mobile-web-app-title" content="Musis">
+    <meta name="application-name" content="Musis">
+    <meta name="msapplication-config" content="./icons/browserconfig.xml">
+    <meta name="theme-color" content="#3e4eb8">
+
+    <link rel="stylesheet" href="./vendors/mdl/material.min.css">
+    <script src="./vendors/mdl/material.min.js"></script>
+    <link rel="stylesheet" href="./vendors/mdl/material.icons.css">
+
+    <script src="./vendors/es6-promise/es6-promise.js"></script>
+    <script src="./vendors/fetch/fetch.js"></script>
+
+    <style>
+        .toolbar {
+            padding: 0px 16px 0px 16px;
+            background-color: white;
+            color: black;
+            height: 90px;
+        }
+
+        .artist-card {
+            background-color: white;
+            min-height: 130px;
+        }
+
+        .artist-card-title-content {
+            color: white;
+        }
+
+        .artist-card-title {
+            background-color: #3E4EB8;
+        }
+
+        .artist-card-text {
+            color: black;
+            font-size: 14pt;
+            z-index: 99;
+            width: 60%;
+        }
+
+        .artist-card-img {
+            float: right;
+        }
+
+        .artist-card-img-container {
+            position: absolute;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="mdl-layout mdl-js-layout mdl-layout--fixed-header">
+
+        <header class="mdl-layout__header">
+            <div class="mdl-layout__header-row">
+                <span class="mdl-layout-title">Musis</span>
+            </div>
+            <div class="toolbar">
+                <form id="form">
+                    <div class="mdl-grid">
+
+                        <div class="mdl-cell mdl-cell--3-col-phone mdl-cell--1-col-phone">
+                            <!-- Textfield with Floating Label -->
+                            <div class="mdl-textfield mdl-js-textfield mdl-textfield--floating-label">
+                                <input class="mdl-textfield__input" autofocus type="text" id="artist">
+                                <label class="mdl-textfield__label" for="artist">Artist/Music</label>
+                            </div>
+                        </div>
+                        <div class="mdl-cell mdl-cell--1-col-phone mdl-cell--1-col-phone">
+                            <!-- Colored FAB button with ripple -->
+                            <button class="mdl-button mdl-js-button mdl-button--fab mdl-js-ripple-effect mdl-button--colored">
+		    <i class="material-icons">search</i>
+		</button>
+                        </div>
+
+                    </div>
+                </form>
+
+            </div>
+        </header>
+        <main class="mdl-layout__content">
+            <div class="page-content">
+                <div id="searchArtistResult" class="mdl-grid">
+
+                </div>
+
+                <script id="artist-card" type="text/template">
+                    <div class="mdl-card mdl-cell mdl-shadow--6dp artist-card">
+                        <div class="mdl-card__title artist-card-title">
+                            <span class="mdl-card__title-text artist-card-title-content">{{name}}</span>
+                        </div>
+                        <div class="mdl-card__supporting-text artist-card-text">
+                            <a href="{{url}}" target="blank"><span>{{track_name}}</span></a>
+                        </div>
+                        <div class="mdl-card__supporting-text artist-card-img-container">
+                            <img src="{{image}}" class="artist-card-img" />
+                        </div>
+                    </div>
+                </script>
+            </div>
+        </main>
+
+    </div>
+
+    <script>
+        var form = document.getElementById("form");
+
+        form.addEventListener("submit", searchArtist, true);
+
+        function searchArtist(event) {
+            event.preventDefault();
+
+            var artistInputValue = document.getElementById('artist').value;
+            if (!artistInputValue) {
+                alert('Artist not informed!');
+                return;
+            }
+            var searchArtistResult = document.getElementById('searchArtistResult');
+            searchArtistResult.innerHTML = '';
+            var url = 'https://api.musixmatch.com/ws/1.1/track.search?apikey=a2092c783aa8162ca77beab498103c8c&page_size=100&page=1&format=jsonp&callback=callback&q=' + artistInputValue;
+            fetch(url)
+                .then(function (response) { return response.text(); })
+                .then(function (responseText) {
+                    const match = responseText.match(/\((.*)\);/m);
+                    if (!match[1]) throw new Error('invalid JSONP response');
+                    const json = JSON.parse(match[1]);
+                    return json;
+                })
+                .then(function (data) {
+                    data.message.body.track_list.forEach(function (data) {
+                        var artistCard = generateArtistCard(data.track);
+                        searchArtistResult.insertAdjacentHTML('beforeend', artistCard);
+                    });
+                });
+        }
+
+        function generateArtistCard(artist) {
+            var template = document.getElementById('artist-card').innerHTML;
+            template = template.replace('{{name}}', artist.artist_name);
+            template = template.replace('{{track_name}}', artist.track_name);
+            template = template.replace('{{url}}', artist.track_share_url);
+            template = template.replace('{{image}}', artist.album_coverart_100x100);
+            return template;
+        }
+    </script>
+
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('service-worker.js');
+        }
+    </script>
+</body>
+
+</html>
